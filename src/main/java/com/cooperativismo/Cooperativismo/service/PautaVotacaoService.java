@@ -48,7 +48,7 @@ public class PautaVotacaoService {
         if(pautaVotacao.getDuracaoMinutos() == 0){
             pautaVotacao.setDuracaoMinutos(1);
         }
-        logger.info(String.format("criando sessão: %s", pautaVotacao.toString()));
+        logger.info(String.format("Sessão %s criada para pauta %s", pautaVotacao.toString(), pautaId));
 
         pautaVotacaoRepositoryMongo.insert(pautaVotacao);
         return pautaVotacao;
@@ -57,12 +57,10 @@ public class PautaVotacaoService {
         Optional<PautaVotacao> optionalPautaVotacao = pautaVotacaoRepositoryMongo.findByPautaId(pautaId);
         PautaVotacao pautaVotacao;
         if (optionalPautaVotacao.isEmpty()){
-            logger.info("Abrir sessão");
 
             pautaVotacao = criarPautaVocacao(pautaId, duracao);
 
         }else{
-            logger.info("Sessão já Aberta");
             pautaVotacao = optionalPautaVotacao.get();
             pautaVotacao = atualizarStatus(pautaVotacao); //atualizar status da pauta causa ja está
 
@@ -105,10 +103,7 @@ public class PautaVotacaoService {
         //Pauta ja existente
         PautaVotacao pautaVotacao = optionalPautaVotacao.get();
 
-        if(verificarSeVotacaoEstaAberta(pautaVotacao)){            //check se sessao esta aberta
-            logger.info("sessao aberta");
-
-
+        if(verificarSeVotacaoEstaAberta(pautaVotacao)){            //check se sessao de votação esta aberta
             List<Voto> votos = pautaVotacao.getVotos();
 
             if(!verificarSeUsuarioJaVoto(voto, votos)){
@@ -148,15 +143,8 @@ public class PautaVotacaoService {
             long duracao = pautaVotacao.getDuracaoMinutos();
 
             LocalDateTime horarioFechamento = horarioAbertura.plusMinutes(duracao);
-
-            logger.info(String.format(
-                    "horario agora = '%s', horario abertura = '%s', duração= '%s'",
-                    horarioAgora, horarioAbertura, duracao));
-
             if (horarioAgora.isAfter(horarioFechamento)){ //se sessao passou do horário de duração, retorna par fechar ela
                 returnValor =  false;
-            }else{
-                logger.info("Ainda continua aberta");
             }
         }else{
             returnValor = false;
@@ -181,7 +169,6 @@ public class PautaVotacaoService {
 
         //Verifica se pauta da votacao existe
         if (optionalPautaVotacao.isEmpty()){
-            logger.warn(String.format("votação na pauta %s não existe", pautaId));
             throw new SessaoNaoExisteException(String.format("Sessao de votacao na pauta com  id %s não existe", pautaId));
         }
 
@@ -199,7 +186,6 @@ public class PautaVotacaoService {
 
 
         PautaSessaoVotacaoResultado resultado = consolidarPautaSessaoVotacaoResultado(pautaVotacao);
-        logger.info(resultado.getResultado());
         return  resultado;
 
     }

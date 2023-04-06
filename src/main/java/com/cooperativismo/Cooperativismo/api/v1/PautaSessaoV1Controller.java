@@ -34,6 +34,8 @@ public  class PautaSessaoV1Controller {
     }
     @PostMapping(path = "sessao/abrir")
     public PautaVotacao abrirSessao(@RequestBody AbrirSessaoRequest abrirSessaoRequest){
+        //TODO: Class para tratar Expections
+
         long pautaId = abrirSessaoRequest.getPautaId();
         PautaVotacao pautaVotacao = null;
         try {
@@ -51,6 +53,8 @@ public  class PautaSessaoV1Controller {
     @PostMapping(path = "sessao/votar")
     public void votar(@RequestBody UsuarioVotaSessaoRequest usuarioVotaSessaoRequest)
             throws SessaoNaoExisteException, SessaoFechadaExpection, UsuarioJaVotoException {
+        //TODO: Class para tratar Expections
+
         long sessaoPautaId = usuarioVotaSessaoRequest.getPautaId();
         String voto = usuarioVotaSessaoRequest.getVoto();
         Usuario usuario = usuarioVotaSessaoRequest.getUsuario();
@@ -72,6 +76,7 @@ public  class PautaSessaoV1Controller {
 
     @GetMapping(path = "sessao/resultado/{pautaId}")
     public PautaSessaoVotacaoResultado resultadoVotacao(@PathVariable("pautaId") long pautaId) throws SessaoNaoExisteException {
+        //TODO: Class para tratar Expections
         try {
             return pautaVotacaoService.resultadoVotacao(pautaId);
 

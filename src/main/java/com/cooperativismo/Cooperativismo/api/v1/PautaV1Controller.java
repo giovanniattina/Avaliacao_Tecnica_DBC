@@ -30,7 +30,6 @@ public class PautaV1Controller {
 
     private final PautaService pautaService;
     private final PautaVotacaoService pautaVotacaoService;
-    private static Logger logger = getLogger(PautaV1Controller.class);
 
     @Autowired
     public PautaV1Controller(
