@@ -54,3 +54,17 @@ utilizava a 8080 como padrão
 Depois de rodar aplicação acessa
 [Swagger](http://localhost:8080/swagger-ui/index.html) para consultar endpoints e como utiliza-los
 
+# Tarefas
+
+## Tarefa 2
+
+## Terafa 3 - Versionamento 
+
+Para versionamento da API vejo que uma das melhores formas é o versionamento e isolamento Controller.
+No Controller é possível definir o path inicial da API, como exemplo 'api/v1/....'.
+E também, isolando os modelos entradas dos PayLoad da API, para cada versão sendo único.
+
+Desse modo, quando é preciso ter uma nova versão é possível criar um novo Controller para o projeto.
+Dependendo da regra de negócio, criando novos Serviços com as regras para as novas versões ou aproveitando as antigas.
+
+No projeto foi criado uma estrutura Simple de como seria o versionamento. (api/v1/{controllers}) 
