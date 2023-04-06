@@ -55,8 +55,10 @@ public class PautaV1Controller {
             if(pautaService.buscarPautaPorId(pautaId) != null){
                 pautaVotacao =  pautaVotacaoService.abrirVotacao(pautaId, abrirSessaoRequest.getDuracao());
             }
-        }catch (PautaVotacaoJaAbertaException | PautaNaoExisteException e){
+        }catch (PautaVotacaoJaAbertaException e){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }catch (PautaNaoExisteException e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
         return pautaVotacao;
     }
@@ -68,8 +70,10 @@ public class PautaV1Controller {
         Usuario usuario = usuarioVotaSessaoRequest.getUsuario();
         try{
             pautaVotacaoService.registarVoto(sessaoPautaId, voto, usuario);
-        }catch (SessaoNaoExisteException | SessaoFechadaExpection | UsuarioJaVotoException e){
+        }catch (SessaoFechadaExpection | UsuarioJaVotoException e){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }catch (SessaoNaoExisteException e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
     }
 
@@ -83,9 +87,12 @@ public class PautaV1Controller {
         try {
             return pautaVotacaoService.resultadoVotacao(pautaId);
 
-        }catch (SessaoNaoExisteException | SessaoVotacaoAindaAbertaExpection e){
+        }catch (SessaoVotacaoAindaAbertaExpection e){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (SessaoNaoExisteException e ){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
+
     }
 
 }

@@ -91,6 +91,9 @@ public class TestePautaVotacaoService {
         assertThrows(PautaVotacaoJaAbertaException.class, () -> pautaVotacaoService.abrirVotacao(pautaId, duracao));
     }
 
+
+
+    //UNIT TEST para contabilizar votacao de uma sessao em uma pauta
     @Test
     public void contabilzarResultadoVotacaoPauta_whenVotacaoFechada_then_retornaSucessoComSim()
             throws SessaoNaoExisteException, SessaoVotacaoAindaAbertaExpection {

@@ -43,8 +43,12 @@ public class TestePautaService {
         when(pautaRepository.insert(any(Pauta.class))).thenReturn(novaPauta);
         when(sequenceGeneratorService.generateSequence(any(String.class))).thenReturn(id);
 
+        // Act
+
         Pauta pauta = pautaService.createPauta(pautaName);
         assertEquals(pauta, novaPauta);
+
+        // Assert
         verify(sequenceGeneratorService, times(1)).generateSequence(Pauta.SEQUENCE_NAME);
         verify(pautaRepository, times(1)).insert(any(Pauta.class));
 
@@ -87,7 +91,11 @@ public class TestePautaService {
     public void abrirVotacao_whenPautaNaoExiste_thenTrowsPautaNaoExisteException(){
         long pautaId = 1L;
 
+        // Act
+
         when(pautaRepository.findById(any(Long.class))).thenReturn(Optional.ofNullable(null));
+
+        // Assert
 
         assertThrows(PautaNaoExisteException.class, () -> pautaService.buscarPautaPorId(pautaId));
         verify(pautaRepository, times(1)).findById(any(Long.class));
