@@ -33,6 +33,7 @@ public class TestePautaVotacaoService {
     @InjectMocks
     PautaVotacaoService pautaVotacaoService;
 
+    //UNIT TEST nas regras para abrir votacao
     @Test
     public void abrirVotacao() throws PautaVotacaoJaAbertaException {
         long pautaId = 1L;
@@ -91,7 +92,7 @@ public class TestePautaVotacaoService {
         assertThrows(PautaVotacaoJaAbertaException.class, () -> pautaVotacaoService.abrirVotacao(pautaId, duracao));
     }
 
-
+    //UNIT Teste para adicionar voto em uma sessao em uma pauta
 
     //UNIT TEST para contabilizar votacao de uma sessao em uma pauta
     @Test

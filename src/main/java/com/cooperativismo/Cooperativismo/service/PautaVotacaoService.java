@@ -171,7 +171,7 @@ public class PautaVotacaoService {
         //Esse é um caso de uso tomado na decisao da criaçao do projeto
         pautaVotacao = atualizarStatus(pautaVotacao);//Antes de verificar status atualiza status
 
-        if(pautaVotacao.getStatus() == "ABERTA"){
+        if(pautaVotacao.getStatus().equals("ABERTA")){
             throw new SessaoVotacaoAindaAbertaExpection(
                     String.format(
                             "Pauta de votaçao com id %s ainda esta Aberta para votacao",
