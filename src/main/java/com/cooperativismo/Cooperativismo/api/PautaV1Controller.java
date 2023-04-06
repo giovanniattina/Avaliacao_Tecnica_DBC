@@ -1,0 +1,91 @@
+package com.cooperativismo.Cooperativismo.api;
+import com.cooperativismo.Cooperativismo.api.request.AbrirSessaoRequest;
+import com.cooperativismo.Cooperativismo.api.request.NovaPautaRequest;
+import com.cooperativismo.Cooperativismo.api.request.UsuarioVotaSessaoRequest;
+import com.cooperativismo.Cooperativismo.expection.*;
+import com.cooperativismo.Cooperativismo.model.Pauta;
+import com.cooperativismo.Cooperativismo.model.PautaSessaoVotacaoResultado;
+import com.cooperativismo.Cooperativismo.model.PautaVotacao;
+import com.cooperativismo.Cooperativismo.model.Usuario;
+import com.cooperativismo.Cooperativismo.service.PautaService;
+import com.cooperativismo.Cooperativismo.service.PautaVotacaoService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+
+import static org.slf4j.LoggerFactory.getLogger;
+
+@RequestMapping("api/v1/pautas")
+@RestController
+public class PautaV1Controller {
+
+    private final PautaService pautaService;
+    private final PautaVotacaoService pautaVotacaoService;
+    private static Logger logger = getLogger(PautaV1Controller.class);
+
+    @Autowired
+    public PautaV1Controller(
+            PautaService pautaService,
+            PautaVotacaoService pautaVotacaoService){
+        this.pautaService = pautaService;
+        this.pautaVotacaoService = pautaVotacaoService;
+    }
+
+    @PostMapping(path = "/create")
+     public Pauta createPauta(@Valid @NotNull @RequestBody NovaPautaRequest pautaRequest){
+        return pautaService.createPauta(pautaRequest.getName());
+    }
+    @GetMapping()
+    public List<Pauta> list() {
+        return pautaService.listarTodasPautas();
+    }
+
+    @PostMapping(path = "sessao/abrir")
+    public PautaVotacao abrirSessao(@RequestBody AbrirSessaoRequest abrirSessaoRequest){
+        long pautaId = abrirSessaoRequest.getPautaId();
+        PautaVotacao pautaVotacao = null;
+        try {
+
+            if(pautaService.buscarPautaPorId(pautaId) != null){
+                pautaVotacao =  pautaVotacaoService.abrirVotacao(pautaId, abrirSessaoRequest.getDuracao());
+            }
+        }catch (PautaVotacaoJaAbertaException | PautaNaoExisteException e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+        return pautaVotacao;
+    }
+    @PostMapping(path = "sessao/votar")
+    public void votar(@RequestBody UsuarioVotaSessaoRequest usuarioVotaSessaoRequest)
+            throws SessaoNaoExisteException, SessaoFechadaExpection, UsuarioJaVotoException {
+        long sessaoPautaId = usuarioVotaSessaoRequest.getPautaId();
+        String voto = usuarioVotaSessaoRequest.getVoto();
+        Usuario usuario = usuarioVotaSessaoRequest.getUsuario();
+        try{
+            pautaVotacaoService.registarVoto(sessaoPautaId, voto, usuario);
+        }catch (SessaoNaoExisteException | SessaoFechadaExpection | UsuarioJaVotoException e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GetMapping(path = "sessao")
+    public List<PautaVotacao> listarPautas(){
+        return pautaVotacaoService.listarTodas();
+    }
+
+    @GetMapping(path = "sessao/resultado/{pautaId}")
+    public PautaSessaoVotacaoResultado resultadoVotacao(@PathVariable("pautaId") long pautaId) throws SessaoNaoExisteException {
+        try {
+            return pautaVotacaoService.resultadoVotacao(pautaId);
+
+        }catch (SessaoNaoExisteException | SessaoVotacaoAindaAbertaExpection e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+}
