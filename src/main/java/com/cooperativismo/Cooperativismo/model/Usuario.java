@@ -11,7 +11,7 @@ public class Usuario {
 
     String id; // id do usuário é o CPF
 
-    public String Usuario(){
+    public String toString(){
         return String.format("Usuario[id=%s]", id);
 
     }

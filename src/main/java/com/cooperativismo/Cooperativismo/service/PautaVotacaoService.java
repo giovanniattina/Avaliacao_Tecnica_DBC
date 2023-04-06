@@ -112,7 +112,7 @@ public class PautaVotacaoService {
 
                 pautaVotacao = pautaVotacaoRepositoryMongo.save(pautaVotacao);
             }else{
-                throw new UsuarioJaVotoException(String.format("Usuario %s, já votou na pauta %s", usuario.toString(), pautaId));
+                throw new UsuarioJaVotoException(String.format("Usuario %s, já votou na pauta %s", usuario.getId(), pautaId));
             }
 
 
@@ -120,6 +120,7 @@ public class PautaVotacaoService {
             atualizarStatus(pautaVotacao);
             throw new SessaoFechadaExpection(String.format("Sessao da Pauta com id %s esta fechada", pautaId));
         }
+        atualizarStatus(pautaVotacao); // Atualizar a sessão sempre quem receber um voto
         return pautaVotacao;
     }
     private PautaVotacao atualizarStatus(PautaVotacao pautaVotacao){
