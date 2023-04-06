@@ -85,12 +85,12 @@ public class PautaVotacaoService {
         return pautaVotacaoRepositoryMongo.findAll();
     }
 
-    public void registarVoto(long pautaId, String votoTexto, Usuario usuario)
+    public PautaVotacao registarVoto(long pautaId, String votoTexto, Usuario usuario)
             throws SessaoNaoExisteException, SessaoFechadaExpection, UsuarioJaVotoException, VotoInvalidoException {
 
         Voto voto = new Voto(pautaId, votoTexto, usuario);
         //Valida de voto esta certo
-        if (voto.votoValido() == false) throw new VotoInvalidoException("Voto invalido, possível valores são SIM e NÃO");
+        if (!voto.votoValido()) throw new VotoInvalidoException("Voto invalido, possível valores são SIM e NÃO");
 
 
         logger.info(String.format("Voto em [pautaId='%s', votoTexto='%s', usuario='%s]", pautaId, votoTexto, usuario.toString()));
@@ -101,11 +101,12 @@ public class PautaVotacaoService {
         if(optionalPautaVotacao.isEmpty()){
             throw new SessaoNaoExisteException(String.format("Pauta com %d não tem Sessao para votação aberta", pautaId));
         }
+
+        //Pauta ja existente
         PautaVotacao pautaVotacao = optionalPautaVotacao.get();
 
         if(verificarSeVotacaoEstaAberta(pautaVotacao)){            //check se sessao esta aberta
             logger.info("sessao aberta");
-
 
 
             List<Voto> votos = pautaVotacao.getVotos();
@@ -114,7 +115,7 @@ public class PautaVotacaoService {
                 votos.add(voto);
                 pautaVotacao.setVotos(votos);
 
-                pautaVotacaoRepositoryMongo.save(pautaVotacao);
+                pautaVotacao = pautaVotacaoRepositoryMongo.save(pautaVotacao);
             }else{
                 throw new UsuarioJaVotoException(String.format("Usuario %s, já votou na pauta %s", usuario.toString(), pautaId));
             }
@@ -124,6 +125,7 @@ public class PautaVotacaoService {
             atualizarStatus(pautaVotacao);
             throw new SessaoFechadaExpection(String.format("Sessao da Pauta com id %s esta fechada", pautaId));
         }
+        return pautaVotacao;
     }
     private PautaVotacao atualizarStatus(PautaVotacao pautaVotacao){
         if(!verificarSeVotacaoEstaAberta(pautaVotacao)){

@@ -14,11 +14,11 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class TestePautaVotacaoService {
@@ -105,6 +105,7 @@ public class TestePautaVotacaoService {
 
 
     }
+
     @Test
     public void registarVoto_whenVotoInvalido_then_throwsVotoInvalidoException(){
         // Arrange
@@ -172,7 +173,78 @@ public class TestePautaVotacaoService {
         verify(pautaVotacaoRepositoryMongo, times(1)).save(any(PautaVotacao.class));
 
     }
+    @Test
+    public void registrarVoto_whenUsuarioNãoTemVoto_then_returnSucesso()
+            throws SessaoFechadaExpection, VotoInvalidoException, UsuarioJaVotoException, SessaoNaoExisteException {
+        // Arange
+        long pautaId = 1L;
+        long id = 1L;
+        int duracao = 1;
+        LocalDateTime horarioDeAbertura = LocalDateTime.now().plusMinutes(duracao); //deixa pauta aberta
 
+        PautaVotacao expectPautaVotacao = new PautaVotacao();
+        expectPautaVotacao.set_id(id);
+        expectPautaVotacao.setPautaId(pautaId);
+        expectPautaVotacao.setStatus("ABERTA");
+        expectPautaVotacao.setDuracaoMinutos(duracao);
+        expectPautaVotacao.setDataAbertura(horarioDeAbertura);
+        expectPautaVotacao.setVotos(new ArrayList<>());
+
+        Usuario usuario = new Usuario();
+        usuario.setId("1");
+        // Expect
+
+        when(pautaVotacaoRepositoryMongo.findByPautaId(anyLong())).thenReturn(Optional.of(expectPautaVotacao));
+        when(pautaVotacaoRepositoryMongo.save(any(PautaVotacao.class))).thenReturn(expectPautaVotacao);
+
+        PautaVotacao returnPautaVotacao = pautaVotacaoService.registarVoto(pautaId, "SIM", usuario);
+        // Assert
+
+        assertTrue(expectPautaVotacao.getVotos().size() <= returnPautaVotacao.getVotos().size());
+        assertTrue(returnPautaVotacao
+                .getVotos()
+                .stream()
+                .anyMatch(v -> {
+                    String usuarioId =  v.getUsuario().getId();
+                    return usuarioId.equals(usuario.getId());
+                }));
+        verify(pautaVotacaoRepositoryMongo, times(1)).findByPautaId(anyLong());
+        verify(pautaVotacaoRepositoryMongo, times(1)).save(any(PautaVotacao.class));
+    }
+
+    @Test
+    public void registrarVoto_whenUsuarioTemVoto_then_throwsUsuarioJaVotoException(){
+        // Arange
+        long pautaId = 1L;
+        long id = 1L;
+        int duracao = 1;
+        LocalDateTime horarioDeAbertura = LocalDateTime.now().plusMinutes(duracao); //deixa pauta aberta
+
+        Usuario usuario = new Usuario();
+        usuario.setId("1");
+        Voto voto = new Voto(pautaId, "SIM", usuario);
+
+        PautaVotacao expectPautaVotacao = new PautaVotacao();
+        expectPautaVotacao.set_id(id);
+        expectPautaVotacao.setPautaId(pautaId);
+        expectPautaVotacao.setStatus("ABERTA");
+        expectPautaVotacao.setDuracaoMinutos(duracao);
+        expectPautaVotacao.setDataAbertura(horarioDeAbertura);
+
+        List<Voto> votoList = new ArrayList<>();
+        votoList.add(voto);
+
+        expectPautaVotacao.setVotos(votoList);
+
+        // Expect
+
+        when(pautaVotacaoRepositoryMongo.findByPautaId(anyLong())).thenReturn(Optional.of(expectPautaVotacao));
+
+        // Assert
+        assertThrows(UsuarioJaVotoException.class,
+                () -> pautaVotacaoService.registarVoto(pautaId, "SIM", usuario));
+
+    }
     //UNIT TEST para contabilizar votacao de uma sessao em uma pauta
     @Test
     public void contabilzarResultadoVotacaoPauta_whenVotacaoFechada_then_retornaSucessoComSim()
