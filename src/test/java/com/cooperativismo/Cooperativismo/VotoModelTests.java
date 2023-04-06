@@ -9,7 +9,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TesteVotoModel {
+public class VotoModelTests {
 
     @Test
     public void validarVoto_whenVotoEstaValido_returnTrue(){
