@@ -1,7 +1,7 @@
-package com.cooperativismo.Cooperativismo.api;
-import com.cooperativismo.Cooperativismo.api.request.AbrirSessaoRequest;
-import com.cooperativismo.Cooperativismo.api.request.NovaPautaRequest;
-import com.cooperativismo.Cooperativismo.api.request.UsuarioVotaSessaoRequest;
+package com.cooperativismo.Cooperativismo.api.v1;
+import com.cooperativismo.Cooperativismo.api.v1.request.AbrirSessaoRequest;
+import com.cooperativismo.Cooperativismo.api.v1.request.NovaPautaRequest;
+import com.cooperativismo.Cooperativismo.api.v1.request.UsuarioVotaSessaoRequest;
 import com.cooperativismo.Cooperativismo.expection.*;
 import com.cooperativismo.Cooperativismo.model.Pauta;
 import com.cooperativismo.Cooperativismo.model.PautaSessaoVotacaoResultado;

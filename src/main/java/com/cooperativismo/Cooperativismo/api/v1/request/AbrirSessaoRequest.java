@@ -1,4 +1,4 @@
-package com.cooperativismo.Cooperativismo.api.request;
+package com.cooperativismo.Cooperativismo.api.v1.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -7,7 +7,11 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NovaPautaRequest {
+@AllArgsConstructor
+public class AbrirSessaoRequest {
+
     @NotBlank
-    String name;
+    long pautaId;
+
+    int duracao;
 }

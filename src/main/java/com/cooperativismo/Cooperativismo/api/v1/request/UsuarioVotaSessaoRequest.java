@@ -1,4 +1,4 @@
-package com.cooperativismo.Cooperativismo.api.request;
+package com.cooperativismo.Cooperativismo.api.v1.request;
 
 import com.cooperativismo.Cooperativismo.model.Usuario;
 import jakarta.validation.constraints.NotBlank;
