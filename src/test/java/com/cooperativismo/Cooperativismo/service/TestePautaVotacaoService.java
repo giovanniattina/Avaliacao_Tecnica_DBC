@@ -1,12 +1,10 @@
 package com.cooperativismo.Cooperativismo.service;
 
+import com.cooperativismo.Cooperativismo.expection.*;
 import com.cooperativismo.Cooperativismo.model.PautaSessaoVotacaoResultado;
 import com.cooperativismo.Cooperativismo.model.PautaVotacao;
 import com.cooperativismo.Cooperativismo.model.Usuario;
 import com.cooperativismo.Cooperativismo.model.Voto;
-import com.cooperativismo.Cooperativismo.expection.PautaVotacaoJaAbertaException;
-import com.cooperativismo.Cooperativismo.expection.SessaoNaoExisteException;
-import com.cooperativismo.Cooperativismo.expection.SessaoVotacaoAindaAbertaExpection;
 import com.cooperativismo.Cooperativismo.repository.PautaVotacaoRepositoryMongo;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -75,7 +73,7 @@ public class TestePautaVotacaoService {
     }
 
     @Test
-    public void abrirVotacao_whenVotacaoJaAberta_thenThrowsPautaVotacaoJaAbertaException() {
+    public void abrirVotacao_whenVotacaoJaAberta_then_ThrowsPautaVotacaoJaAbertaException() {
         // Arrange
         long pautaId = 1L;
         int duracao = 60;
@@ -93,6 +91,87 @@ public class TestePautaVotacaoService {
     }
 
     //UNIT Teste para adicionar voto em uma sessao em uma pauta
+    @Test
+    public void registrarVoto_whenSessaoDeVotacaoNaoExiste_then_thorwsSessaoNaoExisteException(){
+
+        //Arrange
+        when(pautaVotacaoRepositoryMongo.findByPautaId(anyLong())).thenReturn(Optional.ofNullable(null));
+
+        // Assert
+        assertThrows(
+                SessaoNaoExisteException.class,
+                () -> pautaVotacaoService
+                        .registarVoto(1, "SIM", new Usuario()));
+
+
+    }
+    @Test
+    public void registarVoto_whenVotoInvalido_then_throwsVotoInvalidoException(){
+        // Arrange
+
+        long pautaId = 1L;
+        long id = 1L;
+        PautaVotacao expectPautaVotacao = new PautaVotacao();
+        expectPautaVotacao.set_id(id);
+        expectPautaVotacao.setPautaId(pautaId);
+        expectPautaVotacao.setStatus("FECHADA");
+        expectPautaVotacao.setVotos(new ArrayList<>());
+        Usuario usuario = new Usuario();
+
+        String votoTexto = "NAO";
+
+        // Assert
+        assertThrows(
+                VotoInvalidoException.class,
+                () -> pautaVotacaoService.registarVoto(pautaId, votoTexto, usuario));
+
+    }
+    @Test
+    public void registrarVoto_whenSessaoDeVotacaoEstaFechada_then_thorwsSessaoFechadaExpection(){
+        // Arrange
+
+        long pautaId = 1L;
+        long id = 1L;
+        PautaVotacao expectPautaVotacao = new PautaVotacao();
+        expectPautaVotacao.set_id(id);
+        expectPautaVotacao.setPautaId(pautaId);
+        expectPautaVotacao.setStatus("FECHADA");
+        expectPautaVotacao.setVotos(new ArrayList<>());
+
+        when(pautaVotacaoRepositoryMongo.findByPautaId(anyLong())).thenReturn(Optional.of(expectPautaVotacao));
+
+        // Assert
+        assertThrows(
+                SessaoFechadaExpection.class,
+                () -> pautaVotacaoService.registarVoto(pautaId, "SIM", new Usuario()));
+
+    }
+
+    @Test
+    public void registrarVoto_whenSessaoVotacaoEstaAbertaMasDuracaoJaPassou_then_thorwsSessaoFechadaExpection(){
+        // Arange
+        long pautaId = 1L;
+        long id = 1L;
+        int duracao = 1;
+        LocalDateTime horarioDeAbertura = LocalDateTime.now().minusMinutes(duracao);
+
+        PautaVotacao expectPautaVotacao = new PautaVotacao();
+        expectPautaVotacao.set_id(id);
+        expectPautaVotacao.setPautaId(pautaId);
+        expectPautaVotacao.setStatus("ABERTA");
+        expectPautaVotacao.setDuracaoMinutos(duracao);
+        expectPautaVotacao.setDataAbertura(horarioDeAbertura);
+        expectPautaVotacao.setVotos(new ArrayList<>());
+
+        when(pautaVotacaoRepositoryMongo.findByPautaId(anyLong())).thenReturn(Optional.of(expectPautaVotacao));
+
+        // Assert
+        assertThrows(
+                SessaoFechadaExpection.class,
+                () -> pautaVotacaoService.registarVoto(pautaId, "SIM", new Usuario()));
+        verify(pautaVotacaoRepositoryMongo, times(1)).save(any(PautaVotacao.class));
+
+    }
 
     //UNIT TEST para contabilizar votacao de uma sessao em uma pauta
     @Test

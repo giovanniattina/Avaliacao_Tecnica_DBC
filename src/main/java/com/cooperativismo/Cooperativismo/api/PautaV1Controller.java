@@ -74,6 +74,8 @@ public class PautaV1Controller {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }catch (SessaoNaoExisteException e){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }catch (VotoInvalidoException e){
+            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, e.getMessage());
         }
     }
 

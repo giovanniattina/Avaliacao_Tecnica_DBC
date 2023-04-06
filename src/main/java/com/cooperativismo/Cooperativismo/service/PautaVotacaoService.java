@@ -34,27 +34,7 @@ public class PautaVotacaoService {
         this.pautaVotacaoRepositoryMongo = pautaVotacaoRepositoryMongo;
     }
 
-    private boolean verificarSeVotacaoEstaAberta(PautaVotacao pautaVotacao){
-        //true -> esta aberta, false fechada
-        boolean returnValor = true;
-        if(pautaVotacao.getStatus().equals("ABERTA")){
-            LocalDateTime horarioAgora = LocalDateTime.now();
-            LocalDateTime horarioAbertura = pautaVotacao.getDataAbertura();
-            long duracao = pautaVotacao.getDuracaoMinutos();
-            LocalDateTime horarioFechamento = horarioAbertura.plusMinutes(duracao);
 
-            logger.info(String.format("horario agora = '%s', horario abertura = '%s', duração= '%s'", horarioAgora, horarioAbertura, duracao));
-
-            if (horarioAgora.isAfter(horarioFechamento)){
-                returnValor =  false;
-            }else{
-                logger.info("Ainda continua aberta");
-            }
-        }else{
-            returnValor = false;
-        }
-        return returnValor;
-    }
 
     private PautaVotacao criarPautaVocacao(long pautaId, int duracao){
         PautaVotacao pautaVotacao = new PautaVotacao();
@@ -84,7 +64,7 @@ public class PautaVotacaoService {
         }else{
             logger.info("Sessão já Aberta");
             pautaVotacao = optionalPautaVotacao.get();
-            pautaVotacao = atualizarStatus(pautaVotacao); //atualizar status da pauta causa ja estajá fecada
+            pautaVotacao = atualizarStatus(pautaVotacao); //atualizar status da pauta causa ja está
 
             throw new PautaVotacaoJaAbertaException(
                     String.format(
@@ -99,36 +79,37 @@ public class PautaVotacaoService {
         return pautaVotacao;
     }
 
-    private PautaVotacao atualizarStatus(PautaVotacao pautaVotacao){
-        if(!verificarSeVotacaoEstaAberta(pautaVotacao)){
-            //PautaVotacao pautaVotacaoPorId = pautaVotacaoRepositoryMongo.findById(pautaVotacao.get_id()).get();
-            pautaVotacao.setStatus("FECHADA");
-            pautaVotacaoRepositoryMongo.save(pautaVotacao);
-        }
 
-        return pautaVotacao;
-    }
 
     public List<PautaVotacao> listarTodas() {
         return pautaVotacaoRepositoryMongo.findAll();
     }
 
     public void registarVoto(long pautaId, String votoTexto, Usuario usuario)
-            throws SessaoNaoExisteException, SessaoFechadaExpection, UsuarioJaVotoException {
+            throws SessaoNaoExisteException, SessaoFechadaExpection, UsuarioJaVotoException, VotoInvalidoException {
+
+        Voto voto = new Voto(pautaId, votoTexto, usuario);
+        //Valida de voto esta certo
+        if (voto.votoValido() == false) throw new VotoInvalidoException("Voto invalido, possível valores são SIM e NÃO");
+
 
         logger.info(String.format("Voto em [pautaId='%s', votoTexto='%s', usuario='%s]", pautaId, votoTexto, usuario.toString()));
-        //check se sessão existe
+
+        //Verifica se sessão da puata existe para receber foto
         Optional<PautaVotacao> optionalPautaVotacao = pautaVotacaoRepositoryMongo.findByPautaId(pautaId);
+
         if(optionalPautaVotacao.isEmpty()){
-            throw new SessaoNaoExisteException(String.format("Sessao com id %s não existe", pautaId));
+            throw new SessaoNaoExisteException(String.format("Pauta com %d não tem Sessao para votação aberta", pautaId));
         }
-        if(verificarSeVotacaoEstaAberta(optionalPautaVotacao.get())){            //check se sessao esta aberta
+        PautaVotacao pautaVotacao = optionalPautaVotacao.get();
+
+        if(verificarSeVotacaoEstaAberta(pautaVotacao)){            //check se sessao esta aberta
             logger.info("sessao aberta");
 
 
-            Voto voto = new Voto(pautaId, votoTexto, usuario);
-            PautaVotacao pautaVotacao = optionalPautaVotacao.get();
+
             List<Voto> votos = pautaVotacao.getVotos();
+
             if(!verificarSeUsuarioJaVoto(voto, votos)){
                 votos.add(voto);
                 pautaVotacao.setVotos(votos);
@@ -139,11 +120,47 @@ public class PautaVotacaoService {
             }
 
 
-        }else{//avisar que sessao esta fechada e nao recebe mais votos
-            throw new SessaoFechadaExpection(String.format("Sessao com id %s esta fechada", pautaId));
+        }else{//avisar que sessao de votação esta fechada e nao recebe mais votos
+            atualizarStatus(pautaVotacao);
+            throw new SessaoFechadaExpection(String.format("Sessao da Pauta com id %s esta fechada", pautaId));
         }
     }
+    private PautaVotacao atualizarStatus(PautaVotacao pautaVotacao){
+        if(!verificarSeVotacaoEstaAberta(pautaVotacao)){
+            //PautaVotacao pautaVotacaoPorId = pautaVotacaoRepositoryMongo.findById(pautaVotacao.get_id()).get();
+            pautaVotacao.setStatus("FECHADA");
+            pautaVotacaoRepositoryMongo.save(pautaVotacao);
+        }
 
+        return pautaVotacao;
+    }
+    private boolean verificarSeVotacaoEstaAberta(PautaVotacao pautaVotacao){
+        //true -> Sessao esta aberta e recebo votos
+        //false ->Sessao esta fechada e não recebe votos
+        boolean returnValor = true;
+        if(pautaVotacao.getStatus().equals("ABERTA")){
+            //Se a sessao estiver como aberta, verificar se o tempo de duração já não expirou
+
+            LocalDateTime horarioAgora = LocalDateTime.now();
+            LocalDateTime horarioAbertura = pautaVotacao.getDataAbertura();
+            long duracao = pautaVotacao.getDuracaoMinutos();
+
+            LocalDateTime horarioFechamento = horarioAbertura.plusMinutes(duracao);
+
+            logger.info(String.format(
+                    "horario agora = '%s', horario abertura = '%s', duração= '%s'",
+                    horarioAgora, horarioAbertura, duracao));
+
+            if (horarioAgora.isAfter(horarioFechamento)){ //se sessao passou do horário de duração, retorna par fechar ela
+                returnValor =  false;
+            }else{
+                logger.info("Ainda continua aberta");
+            }
+        }else{
+            returnValor = false;
+        }
+        return returnValor;
+    }
     private boolean verificarSeUsuarioJaVoto(Voto novoVoto, List<Voto> votos){
         //true -> ja voto , false -> não voto
         Optional<Voto> votoJaExiste=  votos.
