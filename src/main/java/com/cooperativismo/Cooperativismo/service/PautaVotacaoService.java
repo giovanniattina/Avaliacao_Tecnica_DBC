@@ -9,9 +9,12 @@ import com.cooperativismo.Cooperativismo.repository.PautaVotacaoRepositoryMongo;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -23,15 +26,23 @@ public class PautaVotacaoService {
 
     private final  SequenceGeneratorService sequenceGeneratorService;
     private final PautaVotacaoRepositoryMongo pautaVotacaoRepositoryMongo;
+    private ThreadPoolTaskScheduler threadPoolTaskScheduler;
+
+    private final PautaVotacaoAsyncService pautaVotacaoAsyncService;
     private static Logger logger = getLogger(PautaVotacaoService.class);
+
 
     @Autowired
     public PautaVotacaoService(
             SequenceGeneratorService sequenceGeneratorService,
-            @Qualifier("PautaVotacaoRepository") PautaVotacaoRepositoryMongo pautaVotacaoRepositoryMongo
+            @Qualifier("PautaVotacaoRepository") PautaVotacaoRepositoryMongo pautaVotacaoRepositoryMongo,
+            ThreadPoolTaskScheduler threadPoolTaskScheduler,
+            PautaVotacaoAsyncService pautaVotacaoAsyncService
     ){
         this.sequenceGeneratorService = sequenceGeneratorService;
         this.pautaVotacaoRepositoryMongo = pautaVotacaoRepositoryMongo;
+        this.threadPoolTaskScheduler = threadPoolTaskScheduler;
+        this.pautaVotacaoAsyncService = pautaVotacaoAsyncService;
     }
 
 
@@ -59,6 +70,7 @@ public class PautaVotacaoService {
         if (optionalPautaVotacao.isEmpty()){
 
             pautaVotacao = criarPautaVocacao(pautaId, duracao);
+            agendaFechamentoPautaSessaoVotacao(pautaVotacao);
 
         }else{
             pautaVotacao = optionalPautaVotacao.get();
@@ -123,11 +135,22 @@ public class PautaVotacaoService {
         atualizarStatus(pautaVotacao); // Atualizar a sessão sempre quem receber um voto
         return pautaVotacao;
     }
+
+    /**
+     * Verifica se pauta de votação deveria esta fechada, caso sim, atualiza status para FECHADA
+     * @param pautaVotacao
+     * @return PautaVotacao
+     */
     private PautaVotacao atualizarStatus(PautaVotacao pautaVotacao){
-        if(!verificarSeVotacaoEstaAberta(pautaVotacao)){
-            //PautaVotacao pautaVotacaoPorId = pautaVotacaoRepositoryMongo.findById(pautaVotacao.get_id()).get();
+        /**
+         * Pegar a ultima versão da pauta no banco de dados por causa da concorrencia entra a votação e o fechamento da puata async
+         */
+        PautaVotacao pautaVotacaoUpdated = pautaVotacaoRepositoryMongo
+                .findByPautaId(pautaVotacao.getPautaId()).get();
+
+        if(!verificarSeVotacaoEstaAberta(pautaVotacaoUpdated)){
             pautaVotacao.setStatus("FECHADA");
-            pautaVotacaoRepositoryMongo.save(pautaVotacao);
+            pautaVotacaoRepositoryMongo.save(pautaVotacaoUpdated);
         }
 
         return pautaVotacao;
@@ -217,5 +240,21 @@ public class PautaVotacaoService {
                 qntVotosSim,
                 qntVotosNao,
                 campeao);
+    }
+
+    private void agendaFechamentoPautaSessaoVotacao(PautaVotacao pautaVotacao){
+        //definir data para fechar votação
+        LocalDateTime horarioAbertura = pautaVotacao.getDataAbertura();
+        LocalDateTime horarioFechamento = horarioAbertura.plusMinutes(pautaVotacao.getDuracaoMinutos());
+        Instant instantFechamentoVotacao = horarioFechamento.atZone(ZoneId.systemDefault()).toInstant();
+
+        logger.info(String.format(
+                "Agendando fechando Sessão de Votação da Puata %s, aberta as %s, com duração de %s minutos",
+                pautaVotacao.getPautaId(), pautaVotacao.getDataAbertura(), pautaVotacao.getDuracaoMinutos()
+        ));
+        threadPoolTaskScheduler.schedule(
+                pautaVotacaoAsyncService.fecharVotacaoPautaAsyncTask(pautaVotacao),
+                instantFechamentoVotacao
+        );
     }
 }
