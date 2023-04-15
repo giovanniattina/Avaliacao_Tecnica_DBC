@@ -1,6 +1,6 @@
 # Avaliação
 
-Avaliação técnica dev Giovanni Attina em Java para DBC - Sicred
+Avaliação técnica dev Giovanni Attina em Java para DBC - Sicredi
 
 ## Requerimentos
 
