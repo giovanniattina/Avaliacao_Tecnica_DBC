@@ -56,7 +56,20 @@ Depois de rodar aplicação acessa
 
 # Tarefas
 
-## Tarefa 2
+## Tarefa 2 - Tópico
+Na execução do serviço é utilizado um servidor do kafka em um container docker para publicar mensagem
+async de quando uma sessão de puata fechar, com seu respectivo resultado
+
+### Consultar mensagem publicadas
+A fim de debug, executar os seguintes comandos para visualizar as sessões de votação fechadas 
+através do consumo das mensagems publicadas no topíco 
+````bash
+
+docker exec -it cooperativismo-kafka-1 bash
+
+./../../bin/kafka-console-consumer --bootstrap-server localhost:29092 --from-beginning --topic resultadoVotacaoPauta 'broker-list'
+````
+
 
 ## Terafa 3 - Versionamento 
 

@@ -1,17 +1,14 @@
 package com.cooperativismo.Cooperativismo.service;
 
 
-import com.cooperativismo.Cooperativismo.expection.SessaoNaoExisteException;
-import com.cooperativismo.Cooperativismo.expection.SessaoVotacaoAindaAbertaExpection;
 import com.cooperativismo.Cooperativismo.model.PautaSessaoVotacaoResultado;
 import com.cooperativismo.Cooperativismo.model.PautaVotacao;
 import com.cooperativismo.Cooperativismo.model.Voto;
 import com.cooperativismo.Cooperativismo.repository.PautaVotacaoRepositoryMongo;
+import com.cooperativismo.Cooperativismo.producer.PautaVotacaoResultadoProducer;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -24,11 +21,16 @@ public class PautaVotacaoAsyncService {
 
     private final PautaVotacaoRepositoryMongo pautaVotacaoRepositoryMongo;
 
+    private final PautaVotacaoResultadoProducer pautaVotacaoResultadoProducer;
+
     private static Logger logger = getLogger(PautaVotacaoAsyncService.class);
 
     @Autowired
-    public PautaVotacaoAsyncService(PautaVotacaoRepositoryMongo pautaVotacaoRepositoryMongo) {
+    public PautaVotacaoAsyncService(
+            PautaVotacaoRepositoryMongo pautaVotacaoRepositoryMongo,
+            PautaVotacaoResultadoProducer pautaVotacaoResultadoProducer) {
         this.pautaVotacaoRepositoryMongo = pautaVotacaoRepositoryMongo;
+        this.pautaVotacaoResultadoProducer = pautaVotacaoResultadoProducer;
     }
 
     public Runnable fecharVotacaoPautaAsyncTask(PautaVotacao pautaVotacao){
@@ -42,16 +44,12 @@ public class PautaVotacaoAsyncService {
                 fecharVotacaoSessao(pautaVotacao);
 
                 PautaSessaoVotacaoResultado pautaSessaoVotacaoResultado = resultadoVotacao(pautaVotacao.getPautaId());
-                logger.info(String.format("" +
-                                "Pauta %s, Resultado: %s, Sim: %s, Não: %s",
-                        pautaSessaoVotacaoResultado.getPautaId(),
-                        pautaSessaoVotacaoResultado.getResultado(),
-                        pautaSessaoVotacaoResultado.getQuantidadeSim(),
-                        pautaSessaoVotacaoResultado.getQuantidadeNao()));
+                pautaVotacaoResultadoProducer.publicarResultadoVotacao(pautaSessaoVotacaoResultado);
             }
         };
     }
     public void fecharVotacaoSessao(PautaVotacao pautaVotacao){
+        //Consultar a ultima versão da pauta no banco de dados por causa da concorrencia entre a votação e o fechamento da puata async
         PautaVotacao pautaVotacaoUpdated = pautaVotacaoRepositoryMongo
                 .findByPautaId(pautaVotacao.getPautaId()).get();
 
@@ -63,8 +61,7 @@ public class PautaVotacaoAsyncService {
 
         PautaVotacao pautaVotacaoUpdated = pautaVotacaoRepositoryMongo
                 .findByPautaId(pautaId).get();
-        PautaSessaoVotacaoResultado resultado = consolidarPautaSessaoVotacaoResultado(pautaVotacaoUpdated);
-        return  resultado;
+        return consolidarPautaSessaoVotacaoResultado(pautaVotacaoUpdated);
 
     }
 

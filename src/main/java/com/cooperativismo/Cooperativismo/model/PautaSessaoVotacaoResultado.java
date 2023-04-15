@@ -15,4 +15,11 @@ public class PautaSessaoVotacaoResultado {
     private int quantidadeNao;
 
     private String resultado;
+
+    public String toString(){
+        return String.format(
+                "PautaSessaoVotacaoResultado[pautaId=%s, quantidadeSim='%s', quantidadeNao='%s', resultado='%s']",
+                pautaId, quantidadeSim, quantidadeNao, resultado);
+
+    }
 }
