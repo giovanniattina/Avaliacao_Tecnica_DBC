@@ -1,10 +1,10 @@
 # Avaliação
 
-Avaliação técnica dev Giovanni Attina em Java para DBC
+Avaliação técnica dev Giovanni Attina em Java para DBC - Sicred
 
 ## Requerimentos
 
-Para rodar o projeto precisa de"
+Para rodar o projeto precisa de:
 
 - JDK 1.8 [Install](https://www.digitalocean.com/community/tutorials/how-to-install-java-with-apt-on-ubuntu-20-04)
 - Maven 3 [Install](https://www.digitalocean.com/community/tutorials/install-maven-linux-ubuntu)
@@ -16,12 +16,10 @@ Para rodar o projeto precisa de"
 ## Run
 
 ```bash
+# build the service 
 mvn clean package -DskipTests
-
-
-# run databse mongodb
-docker run -d -p 27017:27017 --name mongdb mongo:latest 
-
+# run databse mongodb and kafka server
+docker-compose up -d
 # run application 
 java -jar target/app.jar
 

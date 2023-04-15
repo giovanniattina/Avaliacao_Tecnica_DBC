@@ -26,6 +26,7 @@ public class KafkaTopicConfig {
     }
 
     @Bean
+    // Topíco apenas com uma partition por questão de ser um teste e ter um consumidor no maximo para teste
     public NewTopic topic1() {
         return new NewTopic(resultadoVotacaoPautaTopicName, 1, (short) 1);
     }
