@@ -27,20 +27,20 @@ java -jar target/app.jar
 URI padrão está em localhost:8080
 
 
-### Excluir banco local
-para excluir o docker criado para o mongo
-1. Pegar ID do container
+### Excluir dockers (mango e kafka)
+para excluir os containers de docker criado
+1. Pegar IDs dos containers
 ```bash
 docker ps
 ```
-2. Com o  **container id** da imagem mongo, rode os seguintes comandos para matar e excluir a image
+2. Com os  **containers ids** de cada imagem, rode os seguintes comandos para matar e excluir a image
 ```bash
 docker kill [container_id]
 docker rm [container_id]
 ``` 
 
 ### Mudar domonio
-Execute o seguinte comondo para mudar a porta de execução
+Execute o seguinte comondo antes da rodar para mudar a porta de execução
 ```bash
  export SERVER_PORT={NOVA_PORTA}
 ```
