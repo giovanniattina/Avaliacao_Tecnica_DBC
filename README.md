@@ -39,6 +39,14 @@ docker kill [container_id]
 docker rm [container_id]
 ``` 
 
+Caso não tenha outro dockers importantes rodando no ambiente, rodar os comandos 
+para limpar os containers do docker
+```
+docker stop $(docker ps -a -q)
+docker rm $(docker ps -a -q)
+
+```
+
 ### Mudar domonio
 Execute o seguinte comondo antes da rodar para mudar a porta de execução
 ```bash
@@ -59,8 +67,14 @@ Na execução do serviço é utilizado um servidor do kafka em um container dock
 async de quando uma sessão de puata fechar, com seu respectivo resultado
 
 ### Consultar mensagem publicadas
-A fim de debug, executar os seguintes comandos para visualizar as sessões de votação fechadas 
-através do consumo das mensagems publicadas no topíco 
+
+De modo geral, quando uma sessão de votação é aberta em uma Pauta, é agendanda
+uma terafa assincrona para ser executaca no horário de fechamento da Votação.
+Quando a votação é fechada, o banco de dados é atualizado e publica em um topico do kafka
+o resultado da votação da pauta fechada.
+
+A fim de debug, executar os seguintes comandos para visualizar as sessões de votação fechadas
+através do consumo das mensagems publicadas no topíco.
 ````bash
 
 docker exec -it cooperativismo-kafka-1 bash
@@ -69,7 +83,7 @@ docker exec -it cooperativismo-kafka-1 bash
 ````
 
 
-## Terafa 3 - Versionamento 
+## Terafa 4 - Versionamento 
 
 Para versionamento da API vejo que uma das melhores formas é o versionamento e isolamento Controller.
 No Controller é possível definir o path inicial da API, como exemplo 'api/v1/....'.

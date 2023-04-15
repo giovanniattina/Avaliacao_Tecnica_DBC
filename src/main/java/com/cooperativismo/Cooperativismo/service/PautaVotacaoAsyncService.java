@@ -21,6 +21,10 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Service para rodar tarefas asyns com a pauta de votação e não criar dependência ciclica com a PautaVotacaoAsynService
  * na dependencia de atualizar a pauta
+ *
+ * A fim de uma aplicação teste e avaliando a integração para envio de mensagens a um sistema de mensageria, não foi adicionado
+ * validação aos retorna nas chamads de banco de dados, caso ocorra um erro entre a abertura e o fechamento assincrono da
+ * votação na pauta
  */
 public class PautaVotacaoAsyncService {
 
