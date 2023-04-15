@@ -8,7 +8,12 @@ import com.cooperativismo.Cooperativismo.repository.PautaVotacaoRepositoryMongo;
 import com.cooperativismo.Cooperativismo.producer.PautaVotacaoResultadoProducer;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -23,17 +28,36 @@ public class PautaVotacaoAsyncService {
 
     private final PautaVotacaoResultadoProducer pautaVotacaoResultadoProducer;
 
+    private final ThreadPoolTaskScheduler threadPoolTaskScheduler;
+
+
     private static Logger logger = getLogger(PautaVotacaoAsyncService.class);
 
     @Autowired
     public PautaVotacaoAsyncService(
             PautaVotacaoRepositoryMongo pautaVotacaoRepositoryMongo,
-            PautaVotacaoResultadoProducer pautaVotacaoResultadoProducer) {
+            PautaVotacaoResultadoProducer pautaVotacaoResultadoProducer, ThreadPoolTaskScheduler threadPoolTaskScheduler) {
         this.pautaVotacaoRepositoryMongo = pautaVotacaoRepositoryMongo;
         this.pautaVotacaoResultadoProducer = pautaVotacaoResultadoProducer;
+        this.threadPoolTaskScheduler = threadPoolTaskScheduler;
     }
 
-    public Runnable fecharVotacaoPautaAsyncTask(PautaVotacao pautaVotacao){
+    public void fecharVotacaoPautaAsync(PautaVotacao pautaVotacao){
+        LocalDateTime horarioAbertura = pautaVotacao.getDataAbertura();
+        LocalDateTime horarioFechamento = horarioAbertura.plusMinutes(pautaVotacao.getDuracaoMinutos());
+        Instant instantFechamentoVotacao = horarioFechamento.atZone(ZoneId.systemDefault()).toInstant();
+
+        logger.info(String.format(
+                "Agendando fechando Sessão de Votação da Puata %s, aberta as %s, com duração de %s minutos",
+                pautaVotacao.getPautaId(), pautaVotacao.getDataAbertura(), pautaVotacao.getDuracaoMinutos()
+        ));
+        threadPoolTaskScheduler.schedule(
+                fecharVotacaoPautaAsyncTask(pautaVotacao),
+                instantFechamentoVotacao
+        );
+    }
+
+    private Runnable fecharVotacaoPautaAsyncTask(PautaVotacao pautaVotacao){
         return new Runnable() {
             @Override
             public void run() {
@@ -43,12 +67,13 @@ public class PautaVotacaoAsyncService {
                 ));
                 fecharVotacaoSessao(pautaVotacao);
 
+                // após fechar pauta votação, publicar resultado em uma fila para outros serviços consumirem
                 PautaSessaoVotacaoResultado pautaSessaoVotacaoResultado = resultadoVotacao(pautaVotacao.getPautaId());
                 pautaVotacaoResultadoProducer.publicarResultadoVotacao(pautaSessaoVotacaoResultado);
             }
         };
     }
-    public void fecharVotacaoSessao(PautaVotacao pautaVotacao){
+    private void fecharVotacaoSessao(PautaVotacao pautaVotacao){
         //Consultar a ultima versão da pauta no banco de dados por causa da concorrencia entre a votação e o fechamento da puata async
         PautaVotacao pautaVotacaoUpdated = pautaVotacaoRepositoryMongo
                 .findByPautaId(pautaVotacao.getPautaId()).get();
@@ -57,7 +82,7 @@ public class PautaVotacaoAsyncService {
         pautaVotacaoRepositoryMongo.save(pautaVotacaoUpdated);
     }
 
-    public PautaSessaoVotacaoResultado resultadoVotacao(long pautaId) {
+    private PautaSessaoVotacaoResultado resultadoVotacao(long pautaId) {
 
         PautaVotacao pautaVotacaoUpdated = pautaVotacaoRepositoryMongo
                 .findByPautaId(pautaId).get();

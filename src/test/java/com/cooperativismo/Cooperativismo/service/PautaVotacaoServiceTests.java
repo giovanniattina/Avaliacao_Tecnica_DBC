@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +28,8 @@ public class PautaVotacaoServiceTests {
     @Mock
     SequenceGeneratorService sequenceGeneratorService;
 
+    @Mock
+    PautaVotacaoAsyncService pautaVotacaoAsyncService;
     @InjectMocks
     PautaVotacaoService pautaVotacaoService;
 
@@ -64,6 +67,7 @@ public class PautaVotacaoServiceTests {
         when(pautaVotacaoRepositoryMongo.findByPautaId(anyLong())).thenReturn(Optional.empty());
         when(sequenceGeneratorService.generateSequence(any(String.class))).thenReturn(id);
         when(pautaVotacaoRepositoryMongo.insert(any(PautaVotacao.class))).thenReturn(pautaVotacao);
+        doNothing().when(pautaVotacaoAsyncService).fecharVotacaoPautaAsync(any(PautaVotacao.class));
         PautaVotacao pautaVotacaoExpect = pautaVotacaoService.abrirVotacao(pautaId, 0);
 
         assertEquals(1, pautaVotacaoExpect.getDuracaoMinutos());
@@ -207,7 +211,7 @@ public class PautaVotacaoServiceTests {
                     String usuarioId =  v.getUsuario().getId();
                     return usuarioId.equals(usuario.getId());
                 }));
-        verify(pautaVotacaoRepositoryMongo, times(1)).findByPautaId(anyLong());
+        verify(pautaVotacaoRepositoryMongo, times(2)).findByPautaId(anyLong());
         verify(pautaVotacaoRepositoryMongo, times(1)).save(any(PautaVotacao.class));
     }
 
@@ -292,7 +296,7 @@ public class PautaVotacaoServiceTests {
                 expectPautaSessaoVotacaoResultado.getResultado());
         verify(
                 pautaVotacaoRepositoryMongo,
-                times(1))
+                times(2))
                 .findByPautaId(anyLong());
 
     }
@@ -344,7 +348,7 @@ public class PautaVotacaoServiceTests {
                 expectPautaSessaoVotacaoResultado.getResultado());
         verify(
                 pautaVotacaoRepositoryMongo,
-                times(1))
+                times(2))
                 .findByPautaId(anyLong());
 
     }
@@ -398,7 +402,7 @@ public class PautaVotacaoServiceTests {
                 expectPautaSessaoVotacaoResultado.getResultado());
         verify(
                 pautaVotacaoRepositoryMongo,
-                times(1))
+                times(2))
                 .findByPautaId(anyLong());
 
     }
@@ -475,7 +479,7 @@ public class PautaVotacaoServiceTests {
                 expectPautaSessaoVotacaoResultado.getResultado());
         verify(
                 pautaVotacaoRepositoryMongo,
-                times(1))
+                times(2))
                 .findByPautaId(anyLong());
 
 

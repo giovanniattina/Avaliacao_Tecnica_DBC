@@ -94,14 +94,6 @@
 				<version>3.0.0-M7</version>
 
 			</plugin>
-
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<mainClass>ccom.cooperativismo.Cooperativismo.CooperativismoApplication</mainClass>
-				</configuration>
-			</plugin>
 		</plugins>
 		<finalName>
 			app

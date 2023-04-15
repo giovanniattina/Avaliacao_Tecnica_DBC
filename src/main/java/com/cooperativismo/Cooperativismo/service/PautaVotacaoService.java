@@ -26,8 +26,6 @@ public class PautaVotacaoService {
 
     private final  SequenceGeneratorService sequenceGeneratorService;
     private final PautaVotacaoRepositoryMongo pautaVotacaoRepositoryMongo;
-    private ThreadPoolTaskScheduler threadPoolTaskScheduler;
-
     private final PautaVotacaoAsyncService pautaVotacaoAsyncService;
     private static Logger logger = getLogger(PautaVotacaoService.class);
 
@@ -36,12 +34,10 @@ public class PautaVotacaoService {
     public PautaVotacaoService(
             SequenceGeneratorService sequenceGeneratorService,
             @Qualifier("PautaVotacaoRepository") PautaVotacaoRepositoryMongo pautaVotacaoRepositoryMongo,
-            ThreadPoolTaskScheduler threadPoolTaskScheduler,
             PautaVotacaoAsyncService pautaVotacaoAsyncService
     ){
         this.sequenceGeneratorService = sequenceGeneratorService;
         this.pautaVotacaoRepositoryMongo = pautaVotacaoRepositoryMongo;
-        this.threadPoolTaskScheduler = threadPoolTaskScheduler;
         this.pautaVotacaoAsyncService = pautaVotacaoAsyncService;
     }
 
@@ -70,7 +66,7 @@ public class PautaVotacaoService {
         if (optionalPautaVotacao.isEmpty()){
 
             pautaVotacao = criarPautaVocacao(pautaId, duracao);
-            agendaFechamentoPautaSessaoVotacao(pautaVotacao);
+            pautaVotacaoAsyncService.fecharVotacaoPautaAsync(pautaVotacao);
 
         }else{
             pautaVotacao = optionalPautaVotacao.get();
@@ -240,21 +236,5 @@ public class PautaVotacaoService {
                 qntVotosSim,
                 qntVotosNao,
                 campeao);
-    }
-
-    private void agendaFechamentoPautaSessaoVotacao(PautaVotacao pautaVotacao){
-        //definir data para fechar votação
-        LocalDateTime horarioAbertura = pautaVotacao.getDataAbertura();
-        LocalDateTime horarioFechamento = horarioAbertura.plusMinutes(pautaVotacao.getDuracaoMinutos());
-        Instant instantFechamentoVotacao = horarioFechamento.atZone(ZoneId.systemDefault()).toInstant();
-
-        logger.info(String.format(
-                "Agendando fechando Sessão de Votação da Puata %s, aberta as %s, com duração de %s minutos",
-                pautaVotacao.getPautaId(), pautaVotacao.getDataAbertura(), pautaVotacao.getDuracaoMinutos()
-        ));
-        threadPoolTaskScheduler.schedule(
-                pautaVotacaoAsyncService.fecharVotacaoPautaAsyncTask(pautaVotacao),
-                instantFechamentoVotacao
-        );
     }
 }
