@@ -64,14 +64,14 @@ Depois de rodar aplicação acessa
 
 ## Tarefa 2 - Tópico
 Na execução do serviço é utilizado um servidor do kafka em um container docker para publicar mensagem
-async de quando uma sessão de puata fechar, com seu respectivo resultado
-
-### Consultar mensagem publicadas
+async de quando uma sessão de payta fechar, com seu respectivo resultado
 
 De modo geral, quando uma sessão de votação é aberta em uma Pauta, é agendanda
 uma terafa assincrona para ser executaca no horário de fechamento da Votação.
-Quando a votação é fechada, o banco de dados é atualizado e publica em um topico do kafka
+Quando a votação é fechada, o banco de dados é atualizado e publica em um tópico do kafka
 o resultado da votação da pauta fechada.
+
+### Consultar mensagem publicadas
 
 A fim de debug, executar os seguintes comandos para visualizar as sessões de votação fechadas
 através do consumo das mensagems publicadas no topíco.
@@ -81,8 +81,10 @@ docker exec -it cooperativismo-kafka-1 bash
 
 ./../../bin/kafka-console-consumer --bootstrap-server localhost:29092 --from-beginning --topic resultadoVotacaoPauta 'broker-list'
 ````
-
-
+### Proxímos passos
+- Testes integrados com o testcontainer 
+- Teste de carga e verificar em um ambiente de grande quantidade de requisições se as mensagens
+não tem delay e precisa de uma nova estratégia de agendamento, com um worker consumindo mensagens para fechar a pauta
 ## Terafa 4 - Versionamento 
 
 Para versionamento da API vejo que uma das melhores formas é o versionamento e isolamento Controller.
